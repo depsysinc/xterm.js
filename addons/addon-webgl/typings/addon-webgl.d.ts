@@ -4,6 +4,7 @@
  */
 
 import { Terminal, ITerminalAddon, IEvent } from '@xterm/xterm';
+import { IWebGL2RenderingContext } from 'Types';
 
 declare module '@xterm/addon-webgl' {
   /**
@@ -49,5 +50,12 @@ declare module '@xterm/addon-webgl' {
      * Clears the terminal's texture atlas and triggers a redraw.
      */
     public clearTextureAtlas(): void;
+
+    /**
+     * Callbacks
+     */
+    public static onInit: ((gl: IWebGL2RenderingContext) => void) | undefined;
+    public static onResize: ((cellwidth: number, cellheight: number) => void) | undefined;
+    public static onRender: ((texture: WebGLTexture) => void) | undefined;
   }
 }

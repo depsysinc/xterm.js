@@ -15,7 +15,7 @@ import { WebglRenderer } from './WebglRenderer';
 import { setTraceLogger } from 'common/services/LogService';
 import { Emitter, Event } from 'vs/base/common/event';
 
-export class WebglAddon extends Disposable implements ITerminalAddon , IWebglApi {
+export class WebglAddon extends Disposable implements ITerminalAddon, IWebglApi {
   private _terminal?: Terminal;
   private _renderer?: WebglRenderer;
 
@@ -27,6 +27,10 @@ export class WebglAddon extends Disposable implements ITerminalAddon , IWebglApi
   public readonly onRemoveTextureAtlasCanvas = this._onRemoveTextureAtlasCanvas.event;
   private readonly _onContextLoss = this._register(new Emitter<void>());
   public readonly onContextLoss = this._onContextLoss.event;
+
+  public static onInit: ((gl: IWebGL2RenderingContext) => void) | undefined = undefined;
+  public static onResize: ((cellwidth: number, cellheight: number) => void) | undefined = undefined;
+  public static onRender: ((texture: WebGLTexture) => void) | undefined = undefined;
 
   constructor(
     private _preserveDrawingBuffer?: boolean
