@@ -357,11 +357,9 @@ export class GlyphRenderer extends Disposable {
     gl.bindBuffer(gl.ARRAY_BUFFER, this._attributesBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, activeBuffer.subarray(0, bufferLength), gl.STREAM_DRAW);
 
-    // Bind the atlas page texture if they have changed
+    // ALWAYS Bind the atlas page textures
     for (let i = 0; i < this._atlas.pages.length; i++) {
-      if (this._atlas.pages[i].version !== this._atlasTextures[i].version) {
-        this._bindAtlasPageTexture(gl, this._atlas, i);
-      }
+      this._bindAtlasPageTexture(gl, this._atlas, i);
     }
 
     // Draw the viewport

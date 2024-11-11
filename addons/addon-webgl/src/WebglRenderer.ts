@@ -19,6 +19,7 @@ import { ICoreService, IDecorationService, IOptionsService } from 'common/servic
 import { Terminal } from '@xterm/xterm';
 import { GlyphRenderer } from './GlyphRenderer';
 import { RectangleRenderer } from './RectangleRenderer';
+import { FrameRenderer } from './FrameRenderer';
 import { COMBINED_CHAR_BIT_MASK, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_EXT_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL, RenderModel } from './RenderModel';
 import { IWebGL2RenderingContext } from './Types';
 import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
@@ -44,6 +45,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _gl: IWebGL2RenderingContext;
   private _rectangleRenderer: MutableDisposable<RectangleRenderer> = this._register(new MutableDisposable());
   private _glyphRenderer: MutableDisposable<GlyphRenderer> = this._register(new MutableDisposable());
+  private _frameRenderer: MutableDisposable<FrameRenderer> = this._register(new MutableDisposable());
 
   public readonly dimensions: IRenderDimensions;
 
@@ -132,7 +134,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     this._core.screenElement!.appendChild(this._canvas);
 
-    [this._rectangleRenderer.value, this._glyphRenderer.value] = this._initializeWebGLState();
+    [this._rectangleRenderer.value, this._glyphRenderer.value, this._frameRenderer.value] = this._initializeWebGLState();
 
     this._isAttached = this._coreBrowserService.window.document.body.contains(this._core.screenElement!);
 
@@ -190,6 +192,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._rectangleRenderer.value?.handleResize();
     this._glyphRenderer.value?.setDimensions(this.dimensions);
     this._glyphRenderer.value?.handleResize();
+    this._frameRenderer.value?.setDimensions(this.dimensions);
+    this._frameRenderer.value?.handleResize();
 
     this._refreshCharAtlas();
 
@@ -244,14 +248,15 @@ export class WebglRenderer extends Disposable implements IRenderer {
   /**
    * Initializes members dependent on WebGL context state.
    */
-  private _initializeWebGLState(): [RectangleRenderer, GlyphRenderer] {
+  private _initializeWebGLState(): [RectangleRenderer, GlyphRenderer, FrameRenderer] {
     this._rectangleRenderer.value = new RectangleRenderer(this._terminal, this._gl, this.dimensions, this._themeService);
     this._glyphRenderer.value = new GlyphRenderer(this._terminal, this._gl, this.dimensions, this._optionsService);
+    this._frameRenderer.value = new FrameRenderer(this._terminal, this._gl, this.dimensions);
 
     // Update dimensions and acquire char atlas
     this.handleCharSizeChanged();
 
-    return [this._rectangleRenderer.value, this._glyphRenderer.value];
+    return [this._rectangleRenderer.value, this._glyphRenderer.value, this._frameRenderer.value];
   }
 
   /**
@@ -346,11 +351,14 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
 
     // Render
+    this._frameRenderer.value?.beginFrame();
+
     this._rectangleRenderer.value.renderBackgrounds();
     this._glyphRenderer.value.render(this._model);
     if (!this._cursorBlinkStateManager.value || this._cursorBlinkStateManager.value.isCursorVisible) {
       this._rectangleRenderer.value.renderCursor();
     }
+    this._frameRenderer.value?.render();
   }
 
   private _updateCursorBlink(): void {
